@@ -86,5 +86,5 @@ async def start_web_app():
     print("Web service started on port 8080")
     await client.run_until_disconnected()
 
-if name == 'main':
+if __name__ == '__main__':
     asyncio.run(start_web_app())
