@@ -103,19 +103,21 @@ async def monitor_handler(event):
             break
 
 # Web service للتأكد أن السيرفر شغال
-async def handle(request):
-    return web.Response(text="Bot is running!")
-
-app = web.Application()
-app.router.add_get("/", handle)
-
-# تشغيل البوت والسيرفر
-async def start():
+async def start_all():
     await client.start()
     print("Bot is running...")
-    await client.run_until_disconnected()
+
+    # تشغيل البوت في الخلفية
+    client_loop = asyncio.create_task(client.run_until_disconnected())
+
+    # تشغيل السيرفر aiohttp
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    await site.start()
+    print("Web server is running on http://0.0.0.0:8080")
+
+    await client_loop  # انتظر انتهاء البوت
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.create_task(start())
-    web.run_app(app, port=8080)
+    asyncio.run(start_all())
