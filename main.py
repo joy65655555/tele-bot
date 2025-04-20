@@ -2,6 +2,7 @@ import asyncio
 from aiohttp import web
 from telethon import TelegramClient, events
 from telethon.tl.custom import Button
+import re
 
 # بيانات حسابك في تلغرام
 api_id = 29721100
@@ -13,12 +14,30 @@ client = TelegramClient(session_name, api_id, api_hash)
 
 # القنوات والبوتات المرتبطة بها
 channels_config = {
-    'ichancy_saw': '@ichancy_saw_bot',
-    'ichancyTheKing': '@Ichancy_TheKingBot',
-    'ichancy_Bot_Dragon': '@ichancy_dragon_bot',
-    'basel2255': '@Ichancy_basel_bot',
-    'captain_ichancy': '@ichancy_captain_bot'
+    'ichancy_saw': {
+        'bot': '@ichancy_saw_bot',
+        'pattern': r'([a-zA-Z0-9]+)',  # صيغة الكود في هذه القناة
+    },
+    'ichancyTheKing': {
+        'bot': '@Ichancy_TheKingBot',
+        'pattern': r'(\d+[a-zA-Z]+\d+)',  # صيغة الكود في هذه القناة
+    },
+    'ichancy_Bot_Dragon': {
+        'bot': '@ichancy_dragon_bot',
+        'pattern': r'الكود[:：]?\s*([a-zA-Z0-9]+)',  # صيغة الكود في هذه القناة
+    },
+    'basel2255': {
+        'bot': '@Ichancy_basel_bot',
+        'pattern': r'الكود[:：]?\s*([a-zA-Z0-9*]+)',  # صيغة الكود في هذه القناة
+    },
+    'captain_ichancy': {
+        'bot': '@ichancy_captain_bot',
+        'pattern': r'([a-zA-Z0-9]+)',  # صيغة الكود في هذه القناة (اختيار الكود الثالث)
+    }
 }
+
+# متغير لتخزين القناة المراقبة الحالية
+monitoring_channel = None
 
 # هذا معالج الأمر /start ويعرض القنوات للمستخدم
 @client.on(events.NewMessage(pattern='/start'))
@@ -34,14 +53,43 @@ async def start_handler(event):
 # معالج الأزرار، يقوم بمعالجة القناة المختارة
 @client.on(events.CallbackQuery)
 async def callback_handler(event):
+    global monitoring_channel
     selected_channel = event.data.decode('utf-8')
-    bot_name = channels_config.get(selected_channel)
+    monitoring_channel = selected_channel
 
-    if bot_name:
+    if monitoring_channel:
         await event.answer(f"تم اختيار القناة: {selected_channel}")
-        # هنا يمكنك إضافة الكود الخاص بمراقبة القناة المختارة
+        # تبدأ المراقبة على القناة المحددة
+        await start_monitoring(selected_channel)
     else:
         await event.answer("حدث خطأ، يرجى المحاولة مجددًا.")
+
+# بدء المراقبة على القناة المحددة
+async def start_monitoring(channel_name):
+    bot_name = channels_config[channel_name]['bot']
+    pattern = channels_config[channel_name]['pattern']
+
+    # مراقبة القناة المختارة
+    @client.on(events.NewMessage(chats=channel_name))
+    async def channel_handler(event):
+        message = event.message.message
+        print(f"رسالة جديدة من القناة {channel_name}:\n{message}")
+
+        # استخدام regex لاستخراج الكود بناءً على الصيغة المحددة
+        match = re.search(pattern, message)
+        if match:
+            code = match.group(1)
+            print(f"تم استخراج الكود: {code}")
+            await client.send_message(bot_name, code)
+        else:
+            print("لم يتم العثور على كود.")
+
+# معالج الأمر /stop لإيقاف المراقبة
+@client.on(events.NewMessage(pattern='/stop'))
+async def stop_handler(event):
+    global monitoring_channel
+    monitoring_channel = None
+    await event.respond("تم إيقاف المراقبة.")
 
 # إعداد الخدمة كـ Web Service باستخدام aiohttp
 async def init_app():
