@@ -46,11 +46,12 @@ monitoring_active = False
 # start command
 @client.on(events.NewMessage(pattern='/start'))
 async def start_handler(event):
+    print("تم استقبال أمر /start")  # للتأكد من وصول الأمر
     keyboard = [
         [Button.inline(name, data=name.encode())] for name in channels_config
     ]
     keyboard.append([Button.inline("بدأ المراقبة", b"start_monitoring")])
-    await event.respond("اختر القنوات التي تريد مراقبتها ثم اضغط 'بدأ المراقبة':", buttons=keyboard)
+    await event.reply("اختر القنوات التي تريد مراقبتها ثم اضغط 'بدأ المراقبة':", buttons=keyboard)
 
 # stop command
 @client.on(events.NewMessage(pattern='/stop'))
@@ -103,6 +104,13 @@ async def monitor_handler(event):
             break
 
 # Web service للتأكد أن السيرفر شغال
+async def handle(request):
+    return web.Response(text="Bot is running!")
+
+app = web.Application()
+app.router.add_get("/", handle)
+
+# تشغيل البوت والسيرفر معًا
 async def start_all():
     await client.start()
     print("Bot is running...")
