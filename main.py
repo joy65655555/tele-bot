@@ -1,24 +1,23 @@
 import asyncio
 import re
-from telethon import TelegramClient, events
-from telethon.tl.custom import Button
+from telethon import TelegramClient, events, Button
 from aiohttp import web
 
-# بيانات حسابك الشخصي (وليس البوت)
+# معلومات حساب تيليجرام
 api_id = 29721100
 api_hash = '8e084daf57bd8ed1f6aded90f6ce4dac'
-session_name = 'my_session'  # نفس اسم الجلسة يلي دخلت فيها رقمك
+session_name = 'my_session'
 
-# تعريف القنوات
+# تعريف القنوات والصيغ والبوتات
 channels_config = {
     "ichancy_saw": {
         "username": "ichancy_saw",
-        "regex": r"ctSh[0-9A-Za-z]+",
+        "regex": r"(ctSh[0-9A-Za-z]+)",
         "bot": "@ichancy_saw_bot"
     },
     "ichancyTheKing": {
         "username": "ichancyTheKing",
-        "regex": r"0Kingg0boot0",
+        "regex": r"(0Kingg0boot0)",
         "bot": "@Ichancy_TheKingBot"
     },
     "ichancy_Bot_Dragon": {
@@ -33,90 +32,90 @@ channels_config = {
     },
     "captain_ichancy": {
         "username": "captain_ichancy",
-        "regex": r"([a-zA-Z0-9]+)",
-        "bot": "@ichancy_captain_bot"
+        "regex": r"[a-zA-Z0-9]+",
+        "bot": "@ichancy_captain_bot",
+        "pick_third": True  # نختار الكود الثالث
     }
 }
 
-# تحديد البوت
+# تهيئة العميل
 client = TelegramClient(session_name, api_id, api_hash)
-
-# متغير لتحديد حالة المراقبة
+selected_channels = set()
 monitoring_active = False
-selected_channels = []
 
-# دالة لمراقبة القنوات
-async def start_monitoring(event, selected_channels):
-    global monitoring_active
-    if not monitoring_active:
-        await event.reply("تم البدء بمراقبة القنوات المحددة.")
-        monitoring_active = True
-
-        @client.on(events.NewMessage(chats=[channels_config[channel]["username"] for channel in selected_channels]))
-        async def channel_handler(event):
-            if monitoring_active:
-                message = event.message.message
-                for channel in selected_channels:
-                    regex = channels_config[channel]["regex"]
-                    bot = channels_config[channel]["bot"]
-
-                    match = re.search(regex, message)
-                    if match:
-                        code = match.group(1)
-                        print(f"تم استخراج الكود: {code}")
-                        await client.send_message(bot, code)
-                # بعد التقاط الكود، نوقف المراقبة
-                monitoring_active = False
-                await event.reply("تم إرسال الكود بنجاح! وسيتوقف البوت الآن.")
-                await client.disconnect()
-
-    else:
-        await event.reply("البوت يعمل بالفعل، انتظر حتى يتوقف ثم حاول مرة أخرى.")
-
-# دالة لإيقاف المراقبة
-async def stop_monitoring(event):
-    global monitoring_active
-    if monitoring_active:
-        monitoring_active = False
-        await event.reply("تم إيقاف المراقبة.")
-    else:
-        await event.reply("البوت ليس قيد التشغيل.")
-
-# دالة لعرض قائمة القنوات
+# start command
+@client.on(events.NewMessage(pattern='/start'))
 async def start_handler(event):
     keyboard = [
-        [Button.inline(name, data=name.encode())] for name in channels_config.keys()
+        [Button.inline(name, data=name.encode())] for name in channels_config
     ]
-    await event.reply("اختر قناة لمراقبتها:", buttons=keyboard)
+    keyboard.append([Button.inline("بدأ المراقبة", b"start_monitoring")])
+    await event.respond("اختر القنوات التي تريد مراقبتها ثم اضغط 'بدأ المراقبة':", buttons=keyboard)
 
-# استقبال الردود من الأزرار
+# stop command
+@client.on(events.NewMessage(pattern='/stop'))
+async def stop_handler(event):
+    global monitoring_active
+    selected_channels.clear()
+    monitoring_active = False
+    await event.respond("تم إيقاف المراقبة.")
+
+# التعامل مع الأزرار
 @client.on(events.CallbackQuery)
 async def callback_handler(event):
-    global selected_channels
-    channel_name = event.data.decode("utf-8")
+    global monitoring_active
 
-    if channel_name in channels_config:
-        if channel_name not in selected_channels:
-            selected_channels.append(channel_name)
-            await event.answer(f"تم إضافة {channel_name} للمراقبة.")
+    data = event.data.decode()
+    if data == "start_monitoring":
+        if not selected_channels:
+            await event.answer("اختر قناة واحدة على الأقل!", alert=True)
+            return
+        monitoring_active = True
+        await event.respond("تم تفعيل المراقبة بنجاح.")
+    elif data in channels_config:
+        if data in selected_channels:
+            selected_channels.remove(data)
+            await event.answer(f"تمت إزالة {data}")
         else:
-            selected_channels.remove(channel_name)
-            await event.answer(f"تم إزالة {channel_name} من المراقبة.")
+            selected_channels.add(data)
+            await event.answer(f"تمت إضافة {data}")
 
-# إعداد Web Service باستخدام aiohttp
+# مراقبة الرسائل الجديدة
+@client.on(events.NewMessage)
+async def monitor_handler(event):
+    global monitoring_active
+    if not monitoring_active:
+        return
+
+    for channel_name in selected_channels:
+        config = channels_config[channel_name]
+        if event.chat.username != config["username"]:
+            continue
+
+        match = re.findall(config["regex"], event.message.message)
+        if match:
+            if config.get("pick_third") and len(match) >= 3:
+                code = match[2]
+            else:
+                code = match[0]
+            await client.send_message(config["bot"], code)
+            print(f"أُرسل الكود: {code} إلى {config['bot']}")
+            break
+
+# Web service للتأكد أن السيرفر شغال
 async def handle(request):
-    return web.Response(text="البوت يعمل!")
+    return web.Response(text="Bot is running!")
 
 app = web.Application()
-app.router.add_get('/', handle)
+app.router.add_get("/", handle)
 
-# دالة لبدء العميل
-async def main():
+# تشغيل البوت والسيرفر
+async def start():
     await client.start()
-    print("البوت جاهز وينتظر أمر /start منك...")
+    print("Bot is running...")
     await client.run_until_disconnected()
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    loop.create_task(start())
     web.run_app(app, port=8080)
