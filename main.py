@@ -116,7 +116,7 @@ async def main():
     print("البوت جاهز وينتظر أمر /start منك...")
     await client.run_until_disconnected()
 
-if name == "main":
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(main())
     web.run_app(app, port=8080)
