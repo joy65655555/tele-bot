@@ -20,7 +20,7 @@ channels_config = {
     },
     "ichancyTheKing": {
         "username": "ichancyTheKing",
-        "regex": r"(0Kingg0boot0)",
+        "regex": r"\b[a-zA-Z0-9]{5,}\b",
         "bot": "@Ichancy_TheKingBot"
     },
     "ichancy_Bot_Dragon": {
@@ -30,18 +30,18 @@ channels_config = {
     },
     "basel2255": {
         "username": "basel2255",
-        "regex": r"الكود:\s*([a-zA-Z0-9*]+)",
+        "regex": r"الكود:\s*([^\s]+)",
         "bot": "@Ichancy_basel_bot"
     },
     "captain_ichancy": {
         "username": "captain_ichancy",
-        "regex": r"[a-zA-Z0-9]+",
+        "regex": r"\b[a-zA-Z0-9]{6,12}\b",
         "bot": "@ichancy_captain_bot",
         "pick_third": True
     },
     "diamondbotichancy": {
         "username": "diamondbotichancy",
-        "regex": r"\b([A-Za-z]+\d+[A-Za-z0-9]*)\b",
+        "regex": r"\b[a-zA-Z0-9]{5,}\b",
         "bot": "@DiamondIchancyBot"
     },
 }
