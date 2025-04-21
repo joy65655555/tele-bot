@@ -41,7 +41,7 @@ channels_config = {
     },
      "diamondbotichancy": {
         "username": "diamondbotichancy",
-        "regex": r"\b([A-Za-z]+\d+)\b",
+        "regex": r"\b[a-zA-Z0-9]{5,}\b",
         "bot": "@DiamondIchancyBot"
     },
 }
