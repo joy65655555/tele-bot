@@ -53,15 +53,22 @@ async def start_handler(event):
         "ثم أرسل كلمة 'بدأ' لبدء المراقبة، أو 'إيقاف' لإيقافها."
     )
 
-# استقبال القنوات والأوامر
+# استقبال أوامر المستخدم (قنوات، بدأ، إيقاف)
 @client.on(events.NewMessage)
 async def handle_user_commands(event):
     global selected_channels, monitoring_active
 
-    message = event.raw_text.strip()
-    if message.startwith('/'):
+    # تجاهل الرسائل التي ليست من دردشة خاصة
+    if not event.is_private:
         return
-    # بدء المراقبة
+
+    message = event.raw_text.strip()
+
+    # تجاهل أوامر / مثل /start
+    if message.startswith('/'):
+        return
+
+    # بدأ المراقبة
     if message.lower() == "بدأ":
         if not selected_channels:
             await event.respond("الرجاء اختيار القنوات أولاً.")
@@ -84,7 +91,7 @@ async def handle_user_commands(event):
         else:
             await event.respond("بعض القنوات غير صحيحة، تأكد من كتابتها بشكل دقيق.")
 
-# مراقبة الرسائل الجديدة
+# مراقبة رسائل القنوات
 @client.on(events.NewMessage)
 async def monitor_handler(event):
     global monitoring_active
