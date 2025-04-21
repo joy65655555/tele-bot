@@ -1,6 +1,6 @@
 import asyncio
 import re
-from telethon import TelegramClient, events, Button
+from telethon import TelegramClient, events
 from aiohttp import web
 
 # معلومات حساب تيليجرام
@@ -34,7 +34,7 @@ channels_config = {
         "username": "captain_ichancy",
         "regex": r"[a-zA-Z0-9]+",
         "bot": "@ichancy_captain_bot",
-        "pick_third": True  # نختار الكود الثالث
+        "pick_third": True
     }
 }
 
@@ -43,43 +43,45 @@ client = TelegramClient(session_name, api_id, api_hash)
 selected_channels = set()
 monitoring_active = False
 
-# start command
+# /start - إرسال التعليمات
 @client.on(events.NewMessage(pattern='/start'))
 async def start_handler(event):
-    print("تم استقبال أمر /start")  # للتأكد من وصول الأمر
-    keyboard = [
-        [Button.inline(name, data=name.encode())] for name in channels_config
-    ]
-    keyboard.append([Button.inline("بدأ المراقبة", b"start_monitoring")])
-    await event.reply("اختر القنوات التي تريد مراقبتها ثم اضغط 'بدأ المراقبة':", buttons=keyboard)
+    await event.respond(
+        "مرحباً! أرسل أسماء القنوات التي تريد مراقبتها، مفصولة بفاصلة.\n"
+        "مثال:\n"
+        "ichancy_saw, ichancyTheKing\n\n"
+        "ثم أرسل كلمة 'بدأ' لبدء المراقبة، أو 'إيقاف' لإيقافها."
+    )
 
-# stop command
-@client.on(events.NewMessage(pattern='/stop'))
-async def stop_handler(event):
-    global monitoring_active
-    selected_channels.clear()
-    monitoring_active = False
-    await event.respond("تم إيقاف المراقبة.")
+# استقبال القنوات والأوامر
+@client.on(events.NewMessage)
+async def handle_user_commands(event):
+    global selected_channels, monitoring_active
 
-# التعامل مع الأزرار
-@client.on(events.CallbackQuery)
-async def callback_handler(event):
-    global monitoring_active
+    message = event.raw_text.strip()
 
-    data = event.data.decode()
-    if data == "start_monitoring":
+    # بدء المراقبة
+    if message.lower() == "بدأ":
         if not selected_channels:
-            await event.answer("اختر قناة واحدة على الأقل!", alert=True)
+            await event.respond("الرجاء اختيار القنوات أولاً.")
             return
         monitoring_active = True
-        await event.respond("تم تفعيل المراقبة بنجاح.")
-    elif data in channels_config:
-        if data in selected_channels:
-            selected_channels.remove(data)
-            await event.answer(f"تمت إزالة {data}")
+        await event.respond("تم تفعيل المراقبة.")
+
+    # إيقاف المراقبة
+    elif message.lower() == "إيقاف":
+        selected_channels.clear()
+        monitoring_active = False
+        await event.respond("تم إيقاف المراقبة.")
+
+    # تحديد القنوات
+    else:
+        possible_channels = [name.strip() for name in message.split(',')]
+        if all(name in channels_config for name in possible_channels):
+            selected_channels = set(possible_channels)
+            await event.respond(f"تم اختيار القنوات: {', '.join(selected_channels)}")
         else:
-            selected_channels.add(data)
-            await event.answer(f"تمت إضافة {data}")
+            await event.respond("بعض القنوات غير صحيحة، تأكد من كتابتها بشكل دقيق.")
 
 # مراقبة الرسائل الجديدة
 @client.on(events.NewMessage)
@@ -110,22 +112,19 @@ async def handle(request):
 app = web.Application()
 app.router.add_get("/", handle)
 
-# تشغيل البوت والسيرفر معًا
+# تشغيل البوت والسيرفر
 async def start_all():
     await client.start()
     print("Bot is running...")
-
-    # تشغيل البوت في الخلفية
     client_loop = asyncio.create_task(client.run_until_disconnected())
 
-    # تشغيل السيرفر aiohttp
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', 8080)
     await site.start()
     print("Web server is running on http://0.0.0.0:8080")
 
-    await client_loop  # انتظر انتهاء البوت
+    await client_loop
 
-if __name__ == "__main__":
+if name == "main":
     asyncio.run(start_all())
