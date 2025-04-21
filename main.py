@@ -15,7 +15,7 @@ allowed_chat_ids = {6431789509}  # ← معرفك الشخصي
 channels_config = {
     "ichancy_saw": {
         "username": "ichancy_saw",
-        "regex": r"(ctSh[0-9A-Za-z]+)",
+        "regex": r"\b[a-zA-Z0-9]{8,12}\b",  # ← التعديل هنا
         "bot": "@ichancy_saw_bot"
     },
     "ichancyTheKing": {
@@ -39,9 +39,9 @@ channels_config = {
         "bot": "@ichancy_captain_bot",
         "pick_third": True
     },
-     "diamondbotichancy": {
+    "diamondbotichancy": {
         "username": "diamondbotichancy",
-        "regex": r"\b[a-zA-Z0-9]{5,}\b",
+        "regex": r"\b([A-Za-z]+\d+[A-Za-z0-9]*)\b",
         "bot": "@DiamondIchancyBot"
     },
 }
@@ -110,6 +110,7 @@ async def monitor_handler(event):
 
         match = re.findall(config["regex"], event.message.message)
         if match:
+            # التعديل هنا: أخذ أول كود فقط
             if config.get("pick_third") and len(match) >= 3:
                 code = match[2]
             else:
@@ -136,7 +137,6 @@ async def start_all():
     site = web.TCPSite(runner, '0.0.0.0', 8080)
     await site.start()
     print("Web server is running on http://0.0.0.0:8080")
-
     await client_loop
 
 if __name__ == "__main__":
