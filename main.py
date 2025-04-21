@@ -50,7 +50,7 @@ async def start_handler(event):
         "مرحباً! أرسل أسماء القنوات التي تريد مراقبتها، مفصولة بفاصلة.\n"
         "مثال:\n"
         "ichancy_saw, ichancyTheKing\n\n"
-        "ثم أرسل كلمة 'بدأ' لبدء المراقبة، أو 'إيقاف' لإيقافها."
+        "ثم أرسل كلمة 's' لبدء المراقبة، أو 'st' لإيقافها."
     )
 
 # استقبال أوامر المستخدم
@@ -68,14 +68,14 @@ async def handle_user_commands(event):
     if message.startswith('/'):
         return
 
-    if message.lower() == "بدأ":
+    if message.lower() == "s":
         if not selected_channels:
             await event.respond("الرجاء اختيار القنوات أولاً.")
             return
         monitoring_active = True
         await event.respond("تم تفعيل المراقبة.")
 
-    elif message.lower() == "إيقاف":
+    elif message.lower() == "st":
         selected_channels.clear()
         monitoring_active = False
         await event.respond("تم إيقاف المراقبة.")
