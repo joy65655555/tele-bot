@@ -38,7 +38,12 @@ channels_config = {
         "regex": r"[a-zA-Z0-9]+",
         "bot": "@ichancy_captain_bot",
         "pick_third": True
-    }
+    },
+     "diamondbotichancy": {
+        "username": "diamondbotichancy",
+        "regex": r"\b([A-Za-z]+\d+)\b",
+        "bot": "@DiamondIchancyBot"
+    },
 }
 
 # تهيئة العميل
