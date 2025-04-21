@@ -134,5 +134,5 @@ async def start_all():
 
     await client_loop
 
-if name == "main":
+if __name__ == "__main__":
     asyncio.run(start_all())
