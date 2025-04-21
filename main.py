@@ -8,6 +8,9 @@ api_id = 29721100
 api_hash = '8e084daf57bd8ed1f6aded90f6ce4dac'
 session_name = 'my_session'
 
+# معرف المستخدم المسموح له بالتفاعل مع البوت
+allowed_chat_ids = {6431789509}  # ← معرفك الشخصي
+
 # تعريف القنوات والصيغ والبوتات
 channels_config = {
     "ichancy_saw": {
@@ -46,6 +49,8 @@ monitoring_active = False
 # /start - إرسال التعليمات
 @client.on(events.NewMessage(pattern='/start'))
 async def start_handler(event):
+    if event.chat_id not in allowed_chat_ids:
+        return
     await event.respond(
         "مرحباً! أرسل أسماء القنوات التي تريد مراقبتها، مفصولة بفاصلة.\n"
         "مثال:\n"
@@ -58,13 +63,11 @@ async def start_handler(event):
 async def handle_user_commands(event):
     global selected_channels, monitoring_active
 
-    # فلترة: تجاهل أي رسالة ليست من دردشتك مع نفسك
-    if event.chat_id != event.sender_id:
+    if event.chat_id not in allowed_chat_ids:
         return
 
     message = event.raw_text.strip()
 
-    # تجاهل الأوامر مثل /start (تم التعامل معها مسبقًا)
     if message.startswith('/'):
         return
 
@@ -131,5 +134,5 @@ async def start_all():
 
     await client_loop
 
-if __name__ == "__main__":
+if name == "main":
     asyncio.run(start_all())
