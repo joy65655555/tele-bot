@@ -59,7 +59,8 @@ async def handle_user_commands(event):
     global selected_channels, monitoring_active
 
     message = event.raw_text.strip()
-
+    if message.startwith('/'):
+        return
     # بدء المراقبة
     if message.lower() == "بدأ":
         if not selected_channels:
