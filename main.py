@@ -15,7 +15,7 @@ allowed_chat_ids = {6431789509}  # ← معرفك الشخصي
 channels_config = {
     "ichancy_saw": {
         "username": "ichancy_saw",
-        "regex": r"\b[a-zA-Z0-9]{8,12}\b",  # ← التعديل هنا
+        "regex": r"\b[a-zA-Z0-9]{8,12}\b",
         "bot": "@ichancy_saw_bot"
     },
     "ichancyTheKing": {
