@@ -49,6 +49,11 @@ channels_config = {
         "regex": r"\b[a-zA-Z0-9]{5,}\b",
         "bot": "@teacher_ichancy_bot"
     },
+    "almalaki_ichancy": {
+        "username": "almalaki_ichancy",
+        "regex": r"\b[a-zA-Z0-9]{5,}\b",
+        "bot": "@almalaki_ichancy_bot"
+    },
 }
 
 # تهيئة العميل
